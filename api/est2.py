@@ -123,7 +123,7 @@ def my_pred_input_fn():
 	return (features, )
 
 def main():
-	est = tf.estimator.Estimator(my_model_fn, model_dir='est_save/')
+	est = tf.estimator.Estimator(my_model_fn, model_dir='save_est/')
 	# train
 	# est.train(my_input_fn, steps=100)
 	est.train(my_input_fn_ds, steps=1000)
