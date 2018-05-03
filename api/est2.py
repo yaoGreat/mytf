@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import random
 
+# 模型函数的写法
 def my_model_fn(features, labels, mode, params, config):
 	X = features['X']
 	Y = labels
@@ -28,6 +29,7 @@ def my_model_fn(features, labels, mode, params, config):
 		train_op = train_op,
 		)
 
+# 输入函数的写法
 def my_input_fn_ds():
 	count = 1000
 	X = [[random.random(), random.random()] for i in range(count)]
@@ -42,6 +44,7 @@ def my_input_fn_ds():
 		Y
 		))
 	dataset = dataset.repeat().batch(50)
+	print(dataset)
 	return dataset
 
 def my_pred_input_fn(X):
@@ -52,6 +55,14 @@ def my_pred_input_fn(X):
 		dataset = dataset.batch(1)
 		return dataset
 	return fn
+
+# 这个写法与上一个应该都可以，这个更类似官方例子
+def my_pred_input_fn_2(X):
+	dataset = tf.data.Dataset.from_tensor_slices((
+		{'X':X},
+		))
+	dataset = dataset.batch(1)
+	return dataset
 
 def main():
 	tf.logging.set_verbosity(tf.logging.INFO) # 打开这句话，可以让训练过程中输出loss和步骤等信息
@@ -68,7 +79,8 @@ def main():
 	# pred
 	X = [[float(i / 10.), float(i / 10.)] for i in range(5)]
 	print(X)
-	preds = est.predict(my_pred_input_fn(X))
+	# preds = est.predict(my_pred_input_fn(X))
+	preds = est.predict(lambda : my_pred_input_fn_2(X))
 	print(list(preds))
 
 	# dump
