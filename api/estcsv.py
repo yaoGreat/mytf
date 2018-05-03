@@ -16,6 +16,7 @@ def my_model_fn(features, labels, mode, params, config):
 	W = tf.Variable(tf.truncated_normal((x_len,1)), name="W")
 	b = tf.Variable(tf.constant(0.1, shape=(1,)), name="b")
 	_Y = tf.reshape(tf.matmul(X, W) + b, (-1,))
+	
 	if not Y is None:
 		loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=_Y, labels=Y))
 
@@ -25,11 +26,38 @@ def my_model_fn(features, labels, mode, params, config):
 	else:
 		loss = None
 		train_op = None
+
+	
+	# 这是predictions的复杂格式，当然，也可以值写一个值
+	# 这里的key貌似是自定义的，会全部返回给predict函数的调用者
+	if mode == tf.estimator.ModeKeys.PREDICT:
+		predictions = {
+			'pred':tf.nn.sigmoid(_Y),
+			'raw':_Y,
+		}
+	else:
+		predictions = None
+
+	if mode == tf.estimator.ModeKeys.EVAL:
+		# 验证模型的正确打开方式，要使用tf.metrics里面的方法来构造返回值。里面已经包含了召回、精准、准确率这些东西了
+		if 'k' in params:
+			k = params['k']
+		else:
+			k = 0.5
+		pred_y = tf.cast(_Y > k, tf.float32)
+		acc = tf.metrics.accuracy(labels=Y, predictions=pred_y)
+		precision = tf.metrics.precision(labels=Y, predictions=pred_y)
+		recall = tf.metrics.recall(labels=Y, predictions=pred_y)
+		metrics = {'acc':acc, 'precision':precision, 'recall':recall}
+	else:
+		metrics = None
+	
 	return tf.estimator.EstimatorSpec(
 		mode = mode,
-		predictions = tf.nn.sigmoid(_Y),
+		predictions = predictions,
 		loss = loss,
 		train_op = train_op,
+		eval_metric_ops = metrics,
 		)
 
 # 输入函数的写法
@@ -108,7 +136,11 @@ def main():
 	
 	est = tf.estimator.Estimator(my_model_fn, model_dir='save_est/', params={'lr':0.01})
 	# train
-	est.train(lambda : my_input_fn_csv('data.csv', FEATURE_COUNT), steps=1000)
+	# est.train(lambda : my_input_fn_csv('data.csv', FEATURE_COUNT), steps=1000)
+
+	# eval
+	# INFO:tensorflow:Saving dict for global step 2000: acc = 0.9719, global_step = 2000, loss = 0.1858771
+	print(est.evaluate(lambda : my_input_fn_csv('data_v.csv', FEATURE_COUNT), steps=100))
 
 if __name__ == '__main__':
 	main()
