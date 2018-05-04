@@ -19,9 +19,9 @@ def my_model_fn(features, feature_columns, labels, mode, params, config):
 	'''
 	_input = tf.feature_column.input_layer(features, feature_columns)
 	print("input", _input)
-	hidden = tf.layers.dense(_input, 4, activation=tf.nn.tanh)
-	output = tf.layers.dense(hidden, 1)
-	_Y = tf.reshape(output, (-1,))
+	hidden = tf.layers.dense(_input, 4, activation=tf.nn.tanh, name='hidden')
+	output = tf.layers.dense(hidden, 1, name='output')
+	_Y = tf.layers.flatten(output)
 	if not Y is None:
 		loss = tf.reduce_mean(tf.square(Y - _Y))
 
