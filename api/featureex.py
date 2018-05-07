@@ -8,6 +8,16 @@ FEATURE_COUNT = 638
 # 模型函数的写法
 def my_model_fn(features, feature_columns, labels, mode, params, config):
 	Y = labels
+	'''
+	tf.feature_column.input_layer
+	Returns:
+	A `Tensor` which represents input layer of a model. Its shape
+	is (batch_size, first_layer_dimension) and its dtype is `float32`.
+	first_layer_dimension is determined based on given `feature_columns`.
+	这是否说明，feature_column输入的参数，一定是一个一维的，对于rnn来说，并不适合呢？
+	看了代码，input_layer函数中，对每个feature都做了reshape，所以输出的数据一定是平的。
+	如果希望在rnn中使用，目前来看，只有将数据先reshape，再传入input_layer了
+	'''
 	_input = tf.feature_column.input_layer(features, feature_columns)
 	print("input", _input)
 	hidden = tf.layers.dense(_input, 8, activation=tf.nn.tanh, name='hidden')
@@ -54,7 +64,7 @@ def main():
 	        [batch_size] + `shape`.
 	'''
 	feature_columns = [
-		tf.feature_column.numeric_column(key='X', shape=(5,4)),
+		tf.feature_column.numeric_column(key='X', shape=(4,5)),
 	]
 	est = tf.estimator.Estimator( \
 		lambda features, labels, mode, params, config : my_model_fn(features, feature_columns, labels, mode, params, config) \
@@ -63,7 +73,7 @@ def main():
 
 	# train
 	count = 10
-	X = [[random.random() for k in range(20)] for i in range(count)]
+	X = np.array([[random.random() for k in range(20)] for i in range(count)])
 	# X = [np.array([random.random() for k in range(20)]).reshape(-1, 4) for i in range(count)]
 	y = lambda x, i : int(np.sum(x[i]) % 10)
 	Y = [y(X, i) for i in range(count)]
